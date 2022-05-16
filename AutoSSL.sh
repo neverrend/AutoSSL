@@ -1,3 +1,17 @@
+HOST=$1
+PORT='443'
+DATE=$(date +'%Y_%m_%d')
+
+if [ $# -eq 2 ]
+then 
+	PORT=$2
+fi
+	
+NMAP_OUTFILE=${DATE}_NMAP_SSL_SCAN_${HOST}:${PORT}.txt
+SSLSCAN_OUTFILE=${DATE}_SSLSCAN_${HOST}:${PORT}.txt
+SSLYZE_OUTFILE=${DATE}_SSLYZE_${HOST}:${PORT}.txt		
+OPENSSL_OUTFILE=${DATE}_OPENSSL_${HOST}:${PORT}.txt	
+
 function listScan()
 {
 	FILENAME=$1
@@ -11,31 +25,16 @@ function listScan()
 }
 
 function main()
-{
-	HOST=$1
-	PORT='443'
-	DATE=$(date +'%Y_%m_%d')
-
-	if [ $# -eq 2 ]
-	then 
-		PORT=$2
-	fi
-
+{	
 	echo 'Starting NMAP Scan!'
-	
-	NMAP_OUTFILE=${DATE}_NMAP_SSL_SCAN_${HOST}:${PORT}.txt
-	SSLSCAN_OUTFILE=${DATE}_SSLSCAN_${HOST}:${PORT}.txt
-	SSLYZE_OUTFILE=${DATE}_SSLYZE_${HOST}:${PORT}.txt		
-	OPENSSL_OUTFILE=${DATE}_OPENSSL_${HOST}:${PORT}.txt	
+	echo "nmap --script ssl-enum-ciphers -p ${PORT} ${HOST}" > $NMAP_OUTFILE
+	nmap --script ssl-enum-ciphers -p $PORT $HOST >> $NMAP_OUTFILE
 
 	grep 'TLSv1.0\|TLSv1.1' $NMAP_OUTFILE &>/dev/null
 	if [ $? -eq 0 ]
 	then
 		echo 'Weak TLS versions found in $NMAP_OUTFILE!'
 	fi
-	
-	echo "nmap --script ssl-enum-ciphers -p ${PORT} ${HOST}" > $NMAP_OUTFILE
-	nmap --script ssl-enum-ciphers -p $PORT $HOST >> $NMAP_OUTFILE
 
 	echo 'Starting SSLScan!'
 	echo "sslscan ${HOST}:${PORT}" > $SSLSCAN_OUTFILE 
@@ -87,7 +86,7 @@ function usage()
 
 function clean()
 {
-	rm *.txt
+	rm *_NMAP_SSL_SCAN_*.txt *_SSLYZE_*.txt *_SSLSCAN_*.txt *_OPENSSL_*.txt
 }
 
 function check_for_ssl_programs()
